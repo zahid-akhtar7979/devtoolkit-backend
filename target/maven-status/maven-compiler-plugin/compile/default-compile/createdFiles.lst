@@ -18,6 +18,7 @@ com/devtoolkit/common/exception/GlobalExceptionHandler.class
 com/devtoolkit/diff/dto/DiffRequest$DiffType.class
 com/devtoolkit/jwt/exception/JwtException$VerificationFailed.class
 com/devtoolkit/jwt/exception/JwtException.class
+com/devtoolkit/imagetopdf/ImageToPdfController.class
 com/devtoolkit/cron/service/CronServiceImpl.class
 com/devtoolkit/diff/dto/DiffRequest.class
 com/devtoolkit/diff/service/DiffService.class

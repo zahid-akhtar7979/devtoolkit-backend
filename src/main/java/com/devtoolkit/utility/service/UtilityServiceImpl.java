@@ -17,6 +17,8 @@ import java.net.URLEncoder;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
+import com.github.vertical_blank.sqlformatter.SqlFormatter;
+import com.github.vertical_blank.sqlformatter.languages.Dialect;
 
 @Service
 public class UtilityServiceImpl implements UtilityService {
@@ -168,21 +170,22 @@ public class UtilityServiceImpl implements UtilityService {
         if (sql == null || sql.trim().isEmpty()) {
             throw new IllegalArgumentException("SQL cannot be null or empty");
         }
-        
-        // Simple SQL formatting
-        String formatted = sql.trim();
-        
-        // Convert keywords to uppercase
-        String[] keywords = {"SELECT", "FROM", "WHERE", "AND", "OR", "ORDER BY", "GROUP BY",
-                           "HAVING", "JOIN", "LEFT JOIN", "RIGHT JOIN", "INNER JOIN",
-                           "OUTER JOIN", "ON", "AS", "IN", "NOT IN", "LIKE", "IS NULL",
-                           "IS NOT NULL", "COUNT", "SUM", "AVG", "MAX", "MIN", "DISTINCT"};
-        
-        for (String keyword : keywords) {
-            formatted = formatted.replaceAll("(?i)\\b" + keyword + "\\b", keyword);
+
+        // Use sql-formatter library for proper formatting
+        Dialect sqlDialect = getDialect(dialect);
+        return SqlFormatter.of(sqlDialect).format(sql);
+    }
+
+    private Dialect getDialect(String dialect) {
+        if (dialect == null) return Dialect.StandardSql;
+        switch (dialect.toLowerCase()) {
+            case "mysql": return Dialect.MySql;
+            case "postgresql": return Dialect.PostgreSql;
+            case "oracle": return Dialect.PlSql;
+            case "sqlserver": return Dialect.TSql;
+            case "sqlite": return Dialect.StandardSql;
+            default: return Dialect.StandardSql;
         }
-        
-        return formatted;
     }
     
     @Override

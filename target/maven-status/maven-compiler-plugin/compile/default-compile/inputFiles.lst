@@ -28,5 +28,6 @@
 /Users/zahidakhtar/Documents/repo/devtoolkit/devtoolkit-backend/src/main/java/com/devtoolkit/jasypt/service/JasyptServiceImpl.java
 /Users/zahidakhtar/Documents/repo/devtoolkit/devtoolkit-backend/src/main/java/com/devtoolkit/diff/service/DiffService.java
 /Users/zahidakhtar/Documents/repo/devtoolkit/devtoolkit-backend/src/main/java/com/devtoolkit/jwt/dto/JwtRequest.java
+/Users/zahidakhtar/Documents/repo/devtoolkit/devtoolkit-backend/src/main/java/com/devtoolkit/imagetopdf/ImageToPdfController.java
 /Users/zahidakhtar/Documents/repo/devtoolkit/devtoolkit-backend/src/main/java/com/devtoolkit/utility/UtilityController.java
 /Users/zahidakhtar/Documents/repo/devtoolkit/devtoolkit-backend/src/main/java/com/devtoolkit/jasypt/service/JasyptService.java
