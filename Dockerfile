@@ -1,5 +1,5 @@
 # Multi-stage build for optimized production image
-FROM maven:3.9.6-eclipse-temurin-21 AS builder
+FROM maven:3.9.6-eclipse-temurin-17-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -12,7 +12,7 @@ COPY src/ ./src/
 RUN mvn clean package -DskipTests
 
 # Production image
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:17-jre-alpine
 
 # Set working directory
 WORKDIR /app
