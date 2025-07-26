@@ -109,6 +109,25 @@
             <artifactId>jackson-core</artifactId>
         </dependency>
 
+        <!-- Image to PDF Processing -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <!-- Apache Commons FileUpload for multipart handling -->
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.5</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.11.0</version>
+        </dependency>
+
 
         <!-- Test Dependencies -->
         <dependency>
