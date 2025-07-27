@@ -8,8 +8,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - JWT_SECRET=your-256-bit-secret-key-here
+      - SPRING_PROFILES_ACTIVE=dev
+      - JWT_SECRET=dev-secret-key-for-development-only-change-in-production
       - SERVER_PORT=8080
     networks:
       - devtoolkit-network

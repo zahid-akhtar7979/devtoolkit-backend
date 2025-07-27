@@ -1,11 +1,13 @@
 package com.devtoolkit.utility.service;
 
 import java.util.Map;
+import java.util.List;
 
 public interface UtilityService {
     String encodeUrl(String url);
     String decodeUrl(String url);
     String generateUuid(String type);
+    List<String> generateMultipleUuids(String type, int count);
     String convertTimestamp(String timestamp, String format);
     String convertFormat(String text, String sourceFormat, String targetFormat);
     Map<String, Object> compareText(String text1, String text2);

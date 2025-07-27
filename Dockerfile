@@ -1,44 +1,30 @@
-# Build stage
-FROM maven:3.8.4-openjdk-17 as build
+# Multi-stage build for optimized production image
+FROM maven:3.9.6-eclipse-temurin-17-alpine AS builder
 
+# Set working directory
 WORKDIR /app
 
-# Copy pom.xml
+# Copy Maven files for dependency caching
 COPY pom.xml .
-
-# Download dependencies
-RUN mvn dependency:go-offline -B
-
-# Copy source code
-COPY src ./src
+COPY src/ ./src/
 
 # Build the application
 RUN mvn clean package -DskipTests
 
-# Production stage
-FROM openjdk:17-jre-alpine
+# Production image
+FROM eclipse-temurin:17-jre-alpine
 
+# Set working directory
 WORKDIR /app
 
-# Copy the built jar
-COPY --from=build /app/target/*.jar app.jar
+# Copy the JAR file from builder stage
+COPY --from=builder /app/target/devtoolkit-backend-*.jar app.jar
 
-# Create a non-root user
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -u 1001 -S appuser -G appgroup
+# Expose port (Railway will set PORT env variable dynamically)
+EXPOSE $PORT
 
-# Change ownership of the app directory
-RUN chown -R appuser:appgroup /app
+# Application configuration
+ENV SPRING_PROFILES_ACTIVE=prod
 
-# Switch to non-root user
-USER appuser
-
-# Expose port
-EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/actuator/health || exit 1
-
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"] 
+# Run the application (Railway provides PORT env variable)
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT:-8080} -jar app.jar"] 

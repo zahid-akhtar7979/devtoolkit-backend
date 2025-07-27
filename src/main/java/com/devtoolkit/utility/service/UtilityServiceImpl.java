@@ -10,13 +10,17 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.net.URLEncoder;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
+import com.github.vertical_blank.sqlformatter.SqlFormatter;
+import com.github.vertical_blank.sqlformatter.languages.Dialect;
 
 @Service
 public class UtilityServiceImpl implements UtilityService {
@@ -63,6 +67,22 @@ public class UtilityServiceImpl implements UtilityService {
             default:
                 return UUID.randomUUID().toString();
         }
+    }
+    
+    @Override
+    public List<String> generateMultipleUuids(String type, int count) {
+        if (count <= 0) {
+            throw new IllegalArgumentException("Count must be greater than 0");
+        }
+        if (count > 1000) {
+            throw new IllegalArgumentException("Count cannot exceed 1000");
+        }
+        
+        List<String> uuids = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            uuids.add(generateUuid(type));
+        }
+        return uuids;
     }
     
     @Override
@@ -168,21 +188,22 @@ public class UtilityServiceImpl implements UtilityService {
         if (sql == null || sql.trim().isEmpty()) {
             throw new IllegalArgumentException("SQL cannot be null or empty");
         }
-        
-        // Simple SQL formatting
-        String formatted = sql.trim();
-        
-        // Convert keywords to uppercase
-        String[] keywords = {"SELECT", "FROM", "WHERE", "AND", "OR", "ORDER BY", "GROUP BY",
-                           "HAVING", "JOIN", "LEFT JOIN", "RIGHT JOIN", "INNER JOIN",
-                           "OUTER JOIN", "ON", "AS", "IN", "NOT IN", "LIKE", "IS NULL",
-                           "IS NOT NULL", "COUNT", "SUM", "AVG", "MAX", "MIN", "DISTINCT"};
-        
-        for (String keyword : keywords) {
-            formatted = formatted.replaceAll("(?i)\\b" + keyword + "\\b", keyword);
+
+        // Use sql-formatter library for proper formatting
+        Dialect sqlDialect = getDialect(dialect);
+        return SqlFormatter.of(sqlDialect).format(sql);
+    }
+
+    private Dialect getDialect(String dialect) {
+        if (dialect == null) return Dialect.StandardSql;
+        switch (dialect.toLowerCase()) {
+            case "mysql": return Dialect.MySql;
+            case "postgresql": return Dialect.PostgreSql;
+            case "oracle": return Dialect.PlSql;
+            case "sqlserver": return Dialect.TSql;
+            case "sqlite": return Dialect.StandardSql;
+            default: return Dialect.StandardSql;
         }
-        
-        return formatted;
     }
     
     @Override
