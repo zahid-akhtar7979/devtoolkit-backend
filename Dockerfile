@@ -27,4 +27,4 @@ EXPOSE $PORT
 ENV SPRING_PROFILES_ACTIVE=prod
 
 # Run the application (Railway provides PORT env variable)
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=$PORT -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT:-8080} -jar app.jar"] 
