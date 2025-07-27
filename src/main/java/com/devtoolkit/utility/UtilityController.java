@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -56,9 +57,21 @@ public class UtilityController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String uuid = utilityService.generateUuid(request.getType());
-            response.put("uuid", uuid);
-            response.put("type", request.getType() != null ? request.getType() : "v4");
+            Integer count = request.getCount();
+            String type = request.getType() != null ? request.getType() : "v4";
+            
+            if (count != null && count > 1) {
+                // Generate multiple UUIDs
+                List<String> uuids = utilityService.generateMultipleUuids(type, count);
+                response.put("uuids", uuids);
+                response.put("count", count);
+            } else {
+                // Generate single UUID
+                String uuid = utilityService.generateUuid(type);
+                response.put("uuid", uuid);
+            }
+            
+            response.put("type", type);
             response.put("success", true);
         } catch (Exception e) {
             response.put("error", e.getMessage());

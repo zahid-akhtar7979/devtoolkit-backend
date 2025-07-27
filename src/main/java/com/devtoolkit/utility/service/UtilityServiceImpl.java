@@ -10,7 +10,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.net.URLEncoder;
@@ -65,6 +67,22 @@ public class UtilityServiceImpl implements UtilityService {
             default:
                 return UUID.randomUUID().toString();
         }
+    }
+    
+    @Override
+    public List<String> generateMultipleUuids(String type, int count) {
+        if (count <= 0) {
+            throw new IllegalArgumentException("Count must be greater than 0");
+        }
+        if (count > 1000) {
+            throw new IllegalArgumentException("Count cannot exceed 1000");
+        }
+        
+        List<String> uuids = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            uuids.add(generateUuid(type));
+        }
+        return uuids;
     }
     
     @Override
