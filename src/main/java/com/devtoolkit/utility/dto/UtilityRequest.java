@@ -17,4 +17,5 @@ public class UtilityRequest {
     private String text2;
     private String sql;
     private String dialect;
+    private Integer count;
 } 
