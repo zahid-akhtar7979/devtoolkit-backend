@@ -2,7 +2,15 @@ package com.devtoolkit.jwt.service;
 
 import com.devtoolkit.jwt.exception.JwtException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.stereotype.Service;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -99,39 +107,41 @@ public class JwtServiceImpl implements JwtService {
         }
 
         try {
-            // First, try to decode the token to ensure it's valid
-            decodeToken(token);
-            
             // Remove common prefixes if present
             token = token.trim();
             if (token.toLowerCase().startsWith("bearer ")) {
                 token = token.substring(7);
             }
 
-            String[] parts = token.split("\\.");
-            if (parts.length != 3) {
-                throw new JwtException.VerificationFailed("Invalid token format");
-            }
+            // First, try to decode the token to ensure it's valid
+            decodeToken(token);
 
-            // For demonstration purposes, we'll perform basic validation
-            // In production, you should use a proper JWT library like jjwt
-            
-            // Check if signature is present and properly encoded
+            // Use JJWT library to properly verify the token
             try {
-                Base64.getUrlDecoder().decode(parts[2]);
+                // Create key from secret
+                byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+                
+                // Parse and verify the token
+                Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(Keys.hmacShaKeyFor(keyBytes))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+                
+                // If we reach here, the token is valid
+                return true;
+                
+            } catch (ExpiredJwtException e) {
+                throw new JwtException.VerificationFailed("JWT token has expired");
+            } catch (UnsupportedJwtException e) {
+                throw new JwtException.VerificationFailed("Unsupported JWT token format");
+            } catch (MalformedJwtException e) {
+                throw new JwtException.VerificationFailed("Malformed JWT token");
+            } catch (SignatureException e) {
+                throw new JwtException.VerificationFailed("Invalid JWT signature - the token may have been tampered with or signed with a different secret");
             } catch (IllegalArgumentException e) {
-                throw new JwtException.VerificationFailed("Invalid signature encoding");
+                throw new JwtException.VerificationFailed("Invalid JWT token: " + e.getMessage());
             }
-
-            // Simple verification: check if token structure is valid and secret is provided
-            // In a real implementation, you would verify the signature using the secret
-            if (secret.length() < 8) {
-                throw new JwtException.VerificationFailed("Secret key appears to be too short (minimum 8 characters recommended)");
-            }
-
-            // For demonstration, return true if token is properly formatted
-            // In production, implement proper HMAC signature verification
-            return true;
             
         } catch (JwtException e) {
             // Re-throw JWT exceptions as-is
