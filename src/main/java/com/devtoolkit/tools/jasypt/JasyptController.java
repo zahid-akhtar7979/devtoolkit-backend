@@ -1,51 +1,39 @@
 package com.devtoolkit.tools.jasypt;
 
+import com.devtoolkit.common.dto.ServiceRequest;
+import com.devtoolkit.common.dto.ServiceResponse;
+import com.devtoolkit.common.enums.Status;
+import com.devtoolkit.tools.jasypt.api.IJasyptResources;
 import com.devtoolkit.tools.jasypt.dto.JasyptRequest;
+import com.devtoolkit.tools.jasypt.dto.JasyptResponse;
 import com.devtoolkit.tools.jasypt.service.JasyptService;
+import com.devtoolkit.tools.jasypt.validation.JasyptRequestValidator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
-@RequestMapping("/api/jasypt")
 @CrossOrigin(origins = "http://localhost:3000")
-public class JasyptController {
+public class JasyptController implements IJasyptResources {
     
     @Autowired
     private JasyptService jasyptService;
     
-    @PostMapping("/encrypt")
-    public ResponseEntity<Map<String, Object>> encrypt(@RequestBody JasyptRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            String encrypted = jasyptService.encrypt(request.getText(), request.getPassword(), request.getAlgorithm());
-            response.put("encrypted", encrypted);
-            response.put("success", true);
-        } catch (Exception e) {
-            response.put("error", e.getMessage());
-            response.put("success", false);
-        }
-        
-        return ResponseEntity.ok(response);
+    @Autowired
+    private JasyptRequestValidator validator;
+    
+    @Override
+    public ServiceResponse<JasyptResponse> encrypt(@RequestBody ServiceRequest<JasyptRequest> request) {
+        JasyptRequest payload = request.getPayload();
+        validator.validateRequest(payload);
+        JasyptResponse result = jasyptService.encrypt(payload.getText(), payload.getPassword(), payload.getAlgorithm());
+        return new ServiceResponse<>(Status.SUCCESS, result);
     }
     
-    @PostMapping("/decrypt")
-    public ResponseEntity<Map<String, Object>> decrypt(@RequestBody JasyptRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            String decrypted = jasyptService.decrypt(request.getText(), request.getPassword(), request.getAlgorithm());
-            response.put("decrypted", decrypted);
-            response.put("success", true);
-        } catch (Exception e) {
-            response.put("error", e.getMessage());
-            response.put("success", false);
-        }
-        
-        return ResponseEntity.ok(response);
+    @Override
+    public ServiceResponse<JasyptResponse> decrypt(@RequestBody ServiceRequest<JasyptRequest> request) {
+        JasyptRequest payload = request.getPayload();
+        validator.validateRequest(payload);
+        JasyptResponse result = jasyptService.decrypt(payload.getText(), payload.getPassword(), payload.getAlgorithm());
+        return new ServiceResponse<>(Status.SUCCESS, result);
     }
 } 

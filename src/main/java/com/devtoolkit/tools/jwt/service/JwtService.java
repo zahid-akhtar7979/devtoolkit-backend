@@ -1,8 +1,8 @@
 package com.devtoolkit.tools.jwt.service;
 
-import java.util.Map;
+import com.devtoolkit.tools.jwt.dto.JwtResponse;
 
 public interface JwtService {
-    Map<String, Object> decodeToken(String token);
+    JwtResponse decodeToken(String token);
     boolean verifyToken(String token, String secret);
 } 

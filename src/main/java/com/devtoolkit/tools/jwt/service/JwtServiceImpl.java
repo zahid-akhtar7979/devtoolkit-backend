@@ -1,7 +1,12 @@
 package com.devtoolkit.tools.jwt.service;
 
-import com.devtoolkit.tools.jwt.exception.JwtException;
+import com.devtoolkit.common.enums.ErrorCode;
+import com.devtoolkit.exception.DevToolkitException;
+import com.devtoolkit.tools.jwt.constants.JwtConstants;
+import com.devtoolkit.tools.jwt.dto.JwtResponse;
+import com.devtoolkit.tools.jwt.validation.JwtRequestValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -12,35 +17,39 @@ import io.jsonwebtoken.security.SignatureException;
 import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.Map;
 
 @Service
 public class JwtServiceImpl implements JwtService {
     
     private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    @Autowired
+    private JwtRequestValidator validator;
 
     @Override
-    public Map<String, Object> decodeToken(String token) {
+    public JwtResponse decodeToken(String token) {
         token = normalizeToken(token);
         String[] parts = validateTokenFormat(token);
-        Map<String, Object> result = new HashMap<>();
+        JwtResponse response = new JwtResponse();
         try {
-            result.put("header", decodeBase64Json(parts[0], "header"));
-            result.put("payload", decodeBase64Json(parts[1], "payload"));
+            response.setHeader(decodeBase64Json(parts[0], JwtConstants.HEADER_PART));
+            response.setPayload(decodeBase64Json(parts[1], JwtConstants.PAYLOAD_PART));
             try {
                 Base64.getUrlDecoder().decode(parts[2]);
             } catch (IllegalArgumentException e) {
-                result.put("signature", parts[2]);
-                throw new JwtException.InvalidEncoding("Invalid Base64 encoding in signature: " + e.getMessage());
+                response.setSignature(parts[2]);
+                throw new DevToolkitException(ErrorCode.JWT_VALIDATION_ERROR, e, JwtConstants.INVALID_BASE64_ENCODING_IN_SIGNATURE);
             }
-            result.put("signature", parts[2]);
-            return result;
+            response.setSignature(parts[2]);
+            response.setValid(true);
+            response.setMessage(JwtConstants.TOKEN_DECODED_SUCCESS_MESSAGE);
+            return response;
 
-        } catch (JwtException e) {
+        } catch (DevToolkitException e) {
             throw e;
         } catch (Exception e) {
-            throw new JwtException.MalformedToken("Unexpected error during token decoding: " + e.getMessage());
+            throw new DevToolkitException(ErrorCode.JWT_VALIDATION_ERROR, e, JwtConstants.UNEXPECTED_ERROR_DURING_TOKEN_DECODING);
         }
     }
 
@@ -52,19 +61,19 @@ public class JwtServiceImpl implements JwtService {
             decodeToken(token);
             Claims claims = parseJwtClaims(token, secret);
             return claims != null;
-        } catch (JwtException e) {
+        } catch (DevToolkitException e) {
             throw e;
         } catch (Exception e) {
-            throw new JwtException.VerificationFailed("Unexpected error during verification: " + e.getMessage());
+            throw new DevToolkitException(ErrorCode.JWT_VALIDATION_ERROR, e, JwtConstants.UNEXPECTED_ERROR_DURING_VERIFICATION);
         }
     }
 
     private String normalizeToken(String token) {
         if (token == null || token.trim().isEmpty()) {
-            throw new JwtException.EmptyToken();
+            throw new DevToolkitException(ErrorCode.JWT_VALIDATION_ERROR, JwtConstants.EMPTY_TOKEN_MESSAGE);
         }
         token = token.trim();
-        if (token.toLowerCase().startsWith("bearer ")) {
+        if (token.toLowerCase().startsWith(JwtConstants.BEARER_PREFIX.toLowerCase())) {
             token = token.substring(7);
         }
         return token;
@@ -72,12 +81,12 @@ public class JwtServiceImpl implements JwtService {
     private String[] validateTokenFormat(String token) {
         String[] parts = token.split("\\.");
         if (parts.length != 3) {
-            throw new JwtException.InvalidFormat("Token has " + parts.length + " parts, expected 3 (header.payload.signature)");
+            throw new DevToolkitException(ErrorCode.JWT_INVALID_FORMAT, JwtConstants.TOKEN_HAS_PARTS_EXPECTED_MESSAGE + parts.length + JwtConstants.PARTS_EXPECTED_3_MESSAGE);
         }
-        String[] partNames = {"header", "payload", "signature"};
+        String[] partNames = {JwtConstants.HEADER_PART, JwtConstants.PAYLOAD_PART, JwtConstants.SIGNATURE_PART};
         for (int i = 0; i < parts.length; i++) {
             if (parts[i].trim().isEmpty()) {
-                throw new JwtException.InvalidFormat("Empty " + partNames[i] + " part");
+                throw new DevToolkitException(ErrorCode.JWT_INVALID_FORMAT, JwtConstants.EMPTY_PART_MESSAGE + partNames[i] + JwtConstants.PART_MESSAGE);
             }
         }
 
@@ -89,19 +98,19 @@ public class JwtServiceImpl implements JwtService {
             String json = new String(Base64.getUrlDecoder().decode(base64Part));
             return objectMapper.readValue(json, Map.class);
         } catch (IllegalArgumentException e) {
-            throw new JwtException.InvalidEncoding("Invalid Base64 encoding in " + partName + ": " + e.getMessage());
+            throw new DevToolkitException(ErrorCode.JWT_VALIDATION_ERROR, e, JwtConstants.INVALID_BASE64_ENCODING_IN_MESSAGE + partName);
         } catch (Exception e) {
-            throw new JwtException.InvalidJson("Invalid JSON in " + partName + ": " + e.getMessage());
+            throw new DevToolkitException(ErrorCode.JWT_VALIDATION_ERROR, e, JwtConstants.INVALID_JSON_IN_MESSAGE + partName);
         }
     }
 
     private void validateTokenAndSecret(String token, String secret) {
         if (token == null || token.trim().isEmpty()) {
-            throw new JwtException.EmptyToken();
+            throw new DevToolkitException(ErrorCode.JWT_VALIDATION_ERROR, JwtConstants.EMPTY_TOKEN_MESSAGE);
         }
 
         if (secret == null || secret.trim().isEmpty()) {
-            throw new JwtException.EmptySecret();
+            throw new DevToolkitException(ErrorCode.JWT_INVALID_SECRET, JwtConstants.EMPTY_SECRET_MESSAGE);
         }
     }
 
@@ -114,15 +123,15 @@ public class JwtServiceImpl implements JwtService {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException e) {
-            throw new JwtException.VerificationFailed("JWT token has expired");
+            throw new DevToolkitException(ErrorCode.JWT_TOKEN_EXPIRED, e, JwtConstants.JWT_TOKEN_EXPIRED_MESSAGE);
         } catch (UnsupportedJwtException e) {
-            throw new JwtException.VerificationFailed("Unsupported JWT token format");
+            throw new DevToolkitException(ErrorCode.JWT_UNSUPPORTED_FORMAT, e, JwtConstants.UNSUPPORTED_JWT_TOKEN_FORMAT_MESSAGE);
         } catch (MalformedJwtException e) {
-            throw new JwtException.VerificationFailed("Malformed JWT token");
+            throw new DevToolkitException(ErrorCode.JWT_MALFORMED_TOKEN, e, JwtConstants.MALFORMED_JWT_TOKEN_MESSAGE);
         } catch (SignatureException e) {
-            throw new JwtException.VerificationFailed("Invalid JWT signature - the token may have been tampered with or signed with a different secret");
+            throw new DevToolkitException(ErrorCode.JWT_INVALID_SIGNATURE, e, JwtConstants.INVALID_JWT_SIGNATURE_MESSAGE);
         } catch (IllegalArgumentException e) {
-            throw new JwtException.VerificationFailed("Invalid JWT token: " + e.getMessage());
+            throw new DevToolkitException(ErrorCode.JWT_INVALID_FORMAT, e, JwtConstants.INVALID_JWT_TOKEN_MESSAGE);
         }
     }
 

@@ -1,68 +1,39 @@
 package com.devtoolkit.tools.jwt;
 
+import com.devtoolkit.common.dto.ServiceRequest;
+import com.devtoolkit.common.dto.ServiceResponse;
+import com.devtoolkit.common.enums.Status;
+import com.devtoolkit.tools.jwt.api.IJwtResources;
 import com.devtoolkit.tools.jwt.dto.JwtRequest;
-import com.devtoolkit.tools.jwt.exception.JwtException;
+import com.devtoolkit.tools.jwt.dto.JwtResponse;
 import com.devtoolkit.tools.jwt.service.JwtService;
+import com.devtoolkit.tools.jwt.validation.JwtRequestValidator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
-@RequestMapping("/api/jwt")
 @CrossOrigin(origins = "http://localhost:3000")
-public class JwtController {
+public class JwtController implements IJwtResources {
     
     @Autowired
     private JwtService jwtService;
     
-    @PostMapping("/decode")
-    public ResponseEntity<Map<String, Object>> decodeToken(@RequestBody JwtRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            Map<String, Object> decoded = jwtService.decodeToken(request.getToken());
-            response.put("decoded", decoded);
-            response.put("success", true);
-        } catch (JwtException e) {
-            response.put("error", e.getUserMessage());
-            response.put("errorCode", e.getErrorCode());
-            response.put("technicalError", e.getMessage());
-            response.put("success", false);
-        } catch (Exception e) {
-            response.put("error", "An unexpected error occurred while processing the JWT token.");
-            response.put("errorCode", "UNKNOWN_ERROR");
-            response.put("technicalError", e.getMessage());
-            response.put("success", false);
-        }
-        
-        return ResponseEntity.ok(response);
+    @Autowired
+    private JwtRequestValidator validator;
+    
+    @Override
+    public ServiceResponse<JwtResponse> decodeToken(@RequestBody ServiceRequest<JwtRequest> request) {
+        JwtRequest payload = request.getPayload();
+        validator.validateDecodeRequest(payload);
+        JwtResponse decoded = jwtService.decodeToken(payload.getToken());
+        return new ServiceResponse<>(Status.SUCCESS, decoded);
     }
     
-    @PostMapping("/verify")
-    public ResponseEntity<Map<String, Object>> verifyToken(@RequestBody JwtRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            boolean isValid = jwtService.verifyToken(request.getToken(), request.getSecret());
-            response.put("valid", isValid);
-            response.put("success", true);
-        } catch (JwtException e) {
-            response.put("error", e.getUserMessage());
-            response.put("errorCode", e.getErrorCode());
-            response.put("technicalError", e.getMessage());
-            response.put("valid", false);
-            response.put("success", false);
-        } catch (Exception e) {
-            response.put("error", "An unexpected error occurred while verifying the JWT token.");
-            response.put("errorCode", "UNKNOWN_ERROR");
-            response.put("technicalError", e.getMessage());
-            response.put("valid", false);
-            response.put("success", false);
-        }
-        
-        return ResponseEntity.ok(response);
+    @Override
+    public ServiceResponse<Boolean> verifyToken(@RequestBody ServiceRequest<JwtRequest> request) {
+        JwtRequest payload = request.getPayload();
+        validator.validateVerifyRequest(payload);
+        boolean isValid = jwtService.verifyToken(payload.getToken(), payload.getSecret());
+        return new ServiceResponse<>(Status.SUCCESS, isValid);
     }
 } 

@@ -1,8 +1,8 @@
 package com.devtoolkit.tools.hash.service;
 
-import java.util.Map;
+import com.devtoolkit.tools.hash.dto.HashResponse;
 
 public interface HashService {
-    Map<String, String> generateHash(String text);
-    String generateHash(String text, String algorithm);
+    HashResponse generateHash(String text);
+    HashResponse generateHash(String text, String algorithm);
 } 

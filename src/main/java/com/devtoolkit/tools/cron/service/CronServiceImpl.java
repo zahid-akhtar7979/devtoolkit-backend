@@ -1,5 +1,9 @@
 package com.devtoolkit.tools.cron.service;
 
+import com.devtoolkit.common.enums.ErrorCode;
+import com.devtoolkit.exception.DevToolkitException;
+import com.devtoolkit.tools.cron.constants.CronConstants;
+import com.devtoolkit.tools.cron.dto.CronResponse;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -10,18 +14,18 @@ import java.util.List;
 public class CronServiceImpl implements CronService {
     
     @Override
-    public List<String> getNextExecutions(String cronExpression, int count) {
+    public CronResponse evaluateCron(String cronExpression, int count) {
         List<String> executions = new ArrayList<>();
         
         try {
             // Simple CRON parser for common patterns
             String[] parts = cronExpression.split("\\s+");
             if (parts.length < 5) {
-                throw new IllegalArgumentException("Invalid CRON expression format");
+                throw new DevToolkitException(ErrorCode.CRON_INVALID_EXPRESSION, CronConstants.INVALID_EXPRESSION_MESSAGE);
             }
             
             LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(CronConstants.DEFAULT_DATE_FORMAT);
             
             LocalDateTime next = getNextExecution(parts, now);
             for (int i = 0; i < count; i++) {
@@ -29,11 +33,22 @@ public class CronServiceImpl implements CronService {
                 next = getNextExecution(parts, next.plusSeconds(1)); // Ensure we get the next occurrence
             }
             
+            String description = generateDescription(parts);
+            
+            CronResponse response = new CronResponse();
+            response.setCronExpression(cronExpression);
+            response.setNextExecutions(executions);
+            response.setDescription(description);
+            response.setValid(true);
+            response.setMessage(CronConstants.EVALUATE_SUCCESS_MESSAGE);
+            
+            return response;
+            
+        } catch (DevToolkitException e) {
+            throw e;
         } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid CRON expression: " + e.getMessage());
+            throw new DevToolkitException(ErrorCode.CRON_PARSE_ERROR, e, cronExpression);
         }
-        
-        return executions;
     }
     
     private LocalDateTime getNextExecution(String[] parts, LocalDateTime from) {
@@ -91,12 +106,10 @@ public class CronServiceImpl implements CronService {
         return from.plusMinutes(1).withSecond(0).withNano(0);
     }
     
-    @Override
-    public String getDescription(String cronExpression) {
+    private String generateDescription(String[] parts) {
         try {
-            String[] parts = cronExpression.split("\\s+");
             if (parts.length < 5) {
-                return "Invalid CRON expression";
+                return CronConstants.INVALID_CRON_EXPRESSION;
             }
             
             String minute = parts[0];
@@ -108,7 +121,7 @@ public class CronServiceImpl implements CronService {
             // Handle specific time patterns
             if (!minute.equals("*") && !hour.equals("*")) {
                 StringBuilder time = new StringBuilder();
-                time.append("At ");
+                time.append(CronConstants.TIME_AT_PREFIX);
                 
                 // Format time
                 int hourInt = Integer.parseInt(hour);
@@ -130,7 +143,7 @@ public class CronServiceImpl implements CronService {
                 } else if (!dayOfWeek.equals("*")) {
                     time.append(" on ").append(getDayName(dayOfWeek));
                     if (!dayOfMonth.equals("*") || !month.equals("*")) {
-                        time.append("s");
+                        time.append(CronConstants.TIME_SECONDS_SUFFIX);
                     }
                 } else if (!dayOfMonth.equals("*")) {
                     time.append(" on day ").append(dayOfMonth).append(" of the month");
@@ -147,27 +160,27 @@ public class CronServiceImpl implements CronService {
             StringBuilder description = new StringBuilder();
             
             if (minute.equals("*") && hour.equals("*")) {
-                description.append("Every minute");
+                description.append(CronConstants.TIME_EVERY_MINUTE);
             } else if (minute.contains("/") && hour.equals("*")) {
                 String[] div = minute.split("/");
                 int interval = Integer.parseInt(div[1]);
-                description.append("Every ").append(interval).append(" minutes");
+                description.append(CronConstants.TIME_EVERY_MINUTES_PREFIX).append(interval).append(CronConstants.TIME_MINUTES_SUFFIX);
             } else if (minute.equals("0") && hour.contains("/")) {
                 String[] div = hour.split("/");
                 int interval = Integer.parseInt(div[1]);
-                description.append("Every ").append(interval).append(" hours");
+                description.append(CronConstants.TIME_EVERY_MINUTES_PREFIX).append(interval).append(CronConstants.TIME_HOURS_SUFFIX);
             } else if (minute.equals("*") && !hour.equals("*")) {
-                description.append("Every minute during hour ").append(hour);
+                description.append(CronConstants.TIME_EVERY_MINUTE_DURING_HOUR).append(hour);
             } else {
                 // Fallback for complex patterns
-                description.append("At minute ").append(minute);
+                description.append(CronConstants.TIME_AT_MINUTE).append(minute);
                 if (!hour.equals("*")) {
                     description.append(" past hour ").append(hour);
                 }
             }
             
             // Add day/month constraints for interval patterns
-            if (description.toString().startsWith("Every") || description.toString().startsWith("At minute")) {
+            if (description.toString().startsWith(CronConstants.TIME_EVERY_MINUTES_PREFIX) || description.toString().startsWith(CronConstants.TIME_AT_MINUTE)) {
                 if (!dayOfMonth.equals("*")) {
                     description.append(" on day ").append(dayOfMonth);
                 }
@@ -182,38 +195,40 @@ public class CronServiceImpl implements CronService {
             return description.toString();
             
         } catch (Exception e) {
-            return "Invalid CRON expression: " + e.getMessage();
+            return CronConstants.INVALID_CRON_EXPRESSION;
         }
     }
     
+
+    
     private String getDayName(String day) {
         switch (day) {
-            case "0": case "7": return "Sunday";
-            case "1": return "Monday";
-            case "2": return "Tuesday";
-            case "3": return "Wednesday";
-            case "4": return "Thursday";
-            case "5": return "Friday";
-            case "6": return "Saturday";
+            case "0": case "7": return CronConstants.DAY_SUNDAY;
+            case "1": return CronConstants.DAY_MONDAY;
+            case "2": return CronConstants.DAY_TUESDAY;
+            case "3": return CronConstants.DAY_WEDNESDAY;
+            case "4": return CronConstants.DAY_THURSDAY;
+            case "5": return CronConstants.DAY_FRIDAY;
+            case "6": return CronConstants.DAY_SATURDAY;
             default: return day;
         }
     }
     
     private String getMonthName(String month) {
         switch (month) {
-            case "1": return "January";
-            case "2": return "February";
-            case "3": return "March";
-            case "4": return "April";
-            case "5": return "May";
-            case "6": return "June";
-            case "7": return "July";
-            case "8": return "August";
-            case "9": return "September";
-            case "10": return "October";
-            case "11": return "November";
-            case "12": return "December";
-            default: return "month " + month;
+            case "1": return CronConstants.MONTH_JANUARY;
+            case "2": return CronConstants.MONTH_FEBRUARY;
+            case "3": return CronConstants.MONTH_MARCH;
+            case "4": return CronConstants.MONTH_APRIL;
+            case "5": return CronConstants.MONTH_MAY;
+            case "6": return CronConstants.MONTH_JUNE;
+            case "7": return CronConstants.MONTH_JULY;
+            case "8": return CronConstants.MONTH_AUGUST;
+            case "9": return CronConstants.MONTH_SEPTEMBER;
+            case "10": return CronConstants.MONTH_OCTOBER;
+            case "11": return CronConstants.MONTH_NOVEMBER;
+            case "12": return CronConstants.MONTH_DECEMBER;
+            default: return CronConstants.MONTH_PREFIX + month;
         }
     }
 } 

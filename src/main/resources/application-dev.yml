@@ -1,0 +1,53 @@
+# ========================================
+# Development Environment Configuration
+# ========================================
+
+# Server Configuration
+server:
+  port: 8080
+
+# Security Configuration
+jwt:
+  secret: dev-secret-key-for-development-only-change-in-production
+  expiration: 86400000
+
+# Logging Configuration
+logging:
+  level:
+    com.devtoolkit: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+  file:
+    name: logs/devtoolkit-backend-dev.log
+
+# CORS Configuration
+cors:
+  allowed-origins: http://localhost:3000,http://127.0.0.1:3000,http://devtoolkit-ui:3000
+
+# File Upload Configuration
+spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+# Development-specific settings
+server:
+  error:
+    include-stacktrace: always
+    include-message: always 

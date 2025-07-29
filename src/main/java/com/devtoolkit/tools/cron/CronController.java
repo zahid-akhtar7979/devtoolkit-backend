@@ -1,39 +1,31 @@
 package com.devtoolkit.tools.cron;
 
+import com.devtoolkit.common.dto.ServiceRequest;
+import com.devtoolkit.common.dto.ServiceResponse;
+import com.devtoolkit.common.enums.Status;
+import com.devtoolkit.tools.cron.api.ICronResources;
 import com.devtoolkit.tools.cron.dto.CronRequest;
+import com.devtoolkit.tools.cron.dto.CronResponse;
 import com.devtoolkit.tools.cron.service.CronService;
+import com.devtoolkit.tools.cron.validation.CronRequestValidator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 @RestController
-@RequestMapping("/api/cron")
 @CrossOrigin(origins = "http://localhost:3000")
-public class CronController {
+public class CronController implements ICronResources {
     
     @Autowired
     private CronService cronService;
     
-    @PostMapping("/evaluate")
-    public ResponseEntity<Map<String, Object>> evaluateCron(@RequestBody CronRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            List<String> nextExecutions = cronService.getNextExecutions(request.getCronExpression(), 5);
-            String description = cronService.getDescription(request.getCronExpression());
-            
-            response.put("nextExecutions", nextExecutions);
-            response.put("description", description);
-            response.put("success", true);
-        } catch (Exception e) {
-            response.put("error", e.getMessage());
-            response.put("success", false);
-        }
-        
-        return ResponseEntity.ok(response);
+    @Autowired
+    private CronRequestValidator validator;
+    
+    @Override
+    public ServiceResponse<CronResponse> evaluateCron(@RequestBody ServiceRequest<CronRequest> request) {
+        CronRequest payload = request.getPayload();
+        validator.validateRequest(payload);
+        CronResponse result = cronService.evaluateCron(payload.getCronExpression(), 5);
+        return new ServiceResponse<>(Status.SUCCESS, result);
     }
 } 

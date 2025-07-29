@@ -1,6 +1,8 @@
 package com.devtoolkit.tools.jasypt.service;
 
+import com.devtoolkit.tools.jasypt.dto.JasyptResponse;
+
 public interface JasyptService {
-    String encrypt(String text, String password, String algorithm);
-    String decrypt(String text, String password, String algorithm);
+    JasyptResponse encrypt(String text, String password, String algorithm);
+    JasyptResponse decrypt(String text, String password, String algorithm);
 } 

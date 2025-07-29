@@ -1,50 +1,38 @@
 package com.devtoolkit.tools.diff;
 
+import com.devtoolkit.common.dto.ServiceRequest;
+import com.devtoolkit.common.dto.ServiceResponse;
+import com.devtoolkit.common.enums.Status;
+import com.devtoolkit.tools.diff.api.IDiffResources;
 import com.devtoolkit.tools.diff.dto.DiffRequest;
+import com.devtoolkit.tools.diff.dto.DiffResponse;
 import com.devtoolkit.tools.diff.service.DiffService;
+import com.devtoolkit.tools.diff.validation.DiffRequestValidator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
-@RequestMapping("/api/diff")
-public class DiffController {
+public class DiffController implements IDiffResources {
     
     @Autowired
     private DiffService diffService;
     
-    @PostMapping("/compare")
-    public ResponseEntity<Map<String, Object>> compareText(@RequestBody DiffRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            Map<String, Object> result = diffService.compareText(request.getText1(), request.getText2());
-            response.putAll(result);
-            response.put("success", true);
-        } catch (Exception e) {
-            response.put("error", e.getMessage());
-            response.put("success", false);
-        }
-        
-        return ResponseEntity.ok(response);
-    }
+    @Autowired
+    private DiffRequestValidator validator;
     
-    @PostMapping("/enhanced")
-    public ResponseEntity<Map<String, Object>> enhancedCompare(@RequestBody DiffRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            Map<String, Object> result = diffService.generateEnhancedDiff(request);
-            response.putAll(result);
-            response.put("success", true);
-        } catch (Exception e) {
-            response.put("error", e.getMessage());
-            response.put("success", false);
-        }
-        
-        return ResponseEntity.ok(response);
+        @Override
+    public ServiceResponse<DiffResponse> compareText(@RequestBody ServiceRequest<DiffRequest> request) {
+        DiffRequest payload = request.getPayload();
+        validator.validateRequest(payload);
+        DiffResponse result = diffService.compareText(payload.getText1(), payload.getText2());
+        return new ServiceResponse<>(Status.SUCCESS, result);
+    }
+
+    @Override
+    public ServiceResponse<DiffResponse> enhancedCompare(@RequestBody ServiceRequest<DiffRequest> request) {
+        DiffRequest payload = request.getPayload();
+        validator.validateRequest(payload);
+        DiffResponse result = diffService.generateEnhancedDiff(payload);
+        return new ServiceResponse<>(Status.SUCCESS, result);
     }
 } 
