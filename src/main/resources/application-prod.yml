@@ -37,7 +37,7 @@ logging:
 
 # CORS Configuration
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://devtoolkit-ui-production.up.railway.app}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://www.thetoolarc.com,https://devtoolkit-ui-production.up.railway.app}
 
 # File Upload Configuration
 spring:

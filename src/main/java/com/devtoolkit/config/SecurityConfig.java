@@ -34,7 +34,8 @@ public class SecurityConfig {
             "http://localhost:3000", 
             "http://127.0.0.1:3000", 
             "http://devtoolkit-ui:3000",
-            "https://devtoolkit-ui-production.up.railway.app"
+            "https://devtoolkit-ui-production.up.railway.app",
+            "https://www.thetoolarc.com"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
