@@ -9,7 +9,15 @@ Spring Boot backend API for the Developer Utility Toolkit.
 - **JWT Decoder/Verifier** - Decode and verify JSON Web Tokens
 - **Jasypt Encrypt/Decrypt** - Encrypt and decrypt text using Jasypt
 - **CRON Expression Evaluator** - Evaluate and describe CRON expressions
-- **Utility APIs** - URL encode/decode, UUID generation, timestamp conversion, and more
+- **Text Diff Comparison** - Compare texts and show differences
+- **URL Encoder/Decoder** - URL encode and decode text
+- **UUID Generator** - Generate single or multiple UUIDs
+- **Timestamp Converter** - Convert between timestamp formats
+- **Format Converter** - Convert between JSON, YAML, and XML
+- **cURL Generator** - Generate cURL commands from request parameters
+- **SQL Formatter** - Format SQL queries for readability
+- **Regex Tester** - Test regex patterns against sample text
+- **Image to PDF Converter** - Convert multiple images to PDF
 
 ## 🛠️ Tech Stack
 
@@ -18,7 +26,9 @@ Spring Boot backend API for the Developer Utility Toolkit.
 - **Spring Web** for REST APIs
 - **Jasypt** for encryption
 - **JWT** for token handling
+- **Apache PDFBox** for PDF generation
 - **Maven** for dependency management
+- **YAML Configuration** for better readability
 
 ## 📦 Installation & Setup
 
@@ -31,7 +41,7 @@ Spring Boot backend API for the Developer Utility Toolkit.
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd devtoolkit
+   cd devtoolkit-backend
    ```
 
 2. **Build and run**
@@ -43,37 +53,42 @@ Spring Boot backend API for the Developer Utility Toolkit.
 3. **Access the API**
    - API Base URL: `http://localhost:8080/api`
    - Health Check: `http://localhost:8080/actuator/health`
+   - API Documentation: See [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
 
-## 🔧 API Endpoints
+## 🔧 Configuration
 
-### Base64
-- `POST /api/base64/encode` - Encode text to Base64
-- `POST /api/base64/decode` - Decode Base64 to text
+The application uses YAML configuration files for better readability and structure:
 
-### Hash
-- `POST /api/hash/generate` - Generate hash for text
+- `application.yml` - Base configuration
+- `application-dev.yml` - Development environment
+- `application-prod.yml` - Production environment
+- `application-sit.yml` - System Integration Test environment
+- `application-stage.yml` - Staging environment
 
-### JWT
-- `POST /api/jwt/decode` - Decode JWT token
-- `POST /api/jwt/verify` - Verify JWT token
+### Environment Variables
 
-### Jasypt
-- `POST /api/jasypt/encrypt` - Encrypt text
-- `POST /api/jasypt/decrypt` - Decrypt text
+| **Variable** | **Description** | **Default** |
+|--------------|-----------------|-------------|
+| `JWT_SECRET` | JWT secret key | `your-256-bit-secret-key-here` |
+| `JWT_EXPIRATION` | JWT expiration time (ms) | `86400000` |
+| `CORS_ALLOWED_ORIGINS` | Allowed CORS origins | `http://localhost:3000` |
+| `MAX_FILE_SIZE` | Maximum file upload size | `10MB` |
+| `MAX_REQUEST_SIZE` | Maximum request size | `10MB` |
+| `PORT` | Server port | `8080` |
 
-### CRON
-- `POST /api/cron/evaluate` - Evaluate CRON expression
+## 📚 API Documentation
 
-### Utilities
-- `POST /api/utility/url/encode` - Encode URL
-- `POST /api/utility/url/decode` - Decode URL
-- `POST /api/utility/uuid/generate` - Generate UUID
-- `POST /api/utility/timestamp/convert` - Convert timestamp
-- `POST /api/utility/converter/convert` - Convert between formats
-- `POST /api/utility/diff/compare` - Compare text differences
-- `POST /api/utility/curl/generate` - Generate cURL command
-- `POST /api/utility/sql/format` - Format SQL query
-- `POST /api/utility/regex/test` - Test regex pattern
+For comprehensive API documentation with sample requests and responses, see:
+
+**[📖 API_DOCUMENTATION.md](API_DOCUMENTATION.md)**
+
+The documentation includes:
+- Complete endpoint reference
+- Sample requests and responses
+- Error handling examples
+- Frontend integration examples
+- JavaScript/TypeScript code samples
+- React hook examples
 
 ## 🏗️ Architecture
 
@@ -87,7 +102,16 @@ com.devtoolkit/
 ├── base64/                             # Base64 encoding/decoding feature
 │   ├── Base64Controller.java
 │   ├── dto/
-│   │   └── Base64Request.java
+│   │   ├── Base64Request.java
+│   │   └── Base64Response.java
+│   ├── constants/
+│   │   └── Base64Constants.java
+│   ├── validation/
+│   │   └── Base64RequestValidator.java
+│   ├── config/
+│   │   └── Base64Config.java
+│   ├── api/
+│   │   └── IBase64Resources.java
 │   └── service/
 │       ├── Base64Service.java
 │       └── Base64ServiceImpl.java
@@ -95,11 +119,33 @@ com.devtoolkit/
 ├── jwt/                                # JWT token handling feature
 ├── jasypt/                             # Encryption feature
 ├── cron/                               # CRON evaluation feature
-├── utility/                            # General utilities feature
+├── diff/                               # Text diff comparison feature
+├── urlencoder/                         # URL encoding/decoding feature
+├── uuidgenerator/                      # UUID generation feature
+├── timestampconverter/                 # Timestamp conversion feature
+├── formatconverter/                    # Format conversion feature
+├── curlgenerator/                      # cURL command generation feature
+├── sqlformatter/                       # SQL formatting feature
+├── regextester/                        # Regex testing feature
+├── imagetopdf/                         # Image to PDF conversion feature
 └── common/                             # Shared components
     ├── config/
-    └── exception/
+    ├── dto/
+    ├── enums/
+    ├── exception/
+    └── helper/
 ```
+
+### Key Architectural Principles
+
+1. **Single Responsibility Principle (SRP)** - Each feature is self-contained
+2. **Interface Segregation** - API contracts defined in interfaces
+3. **Dependency Injection** - Spring-managed components
+4. **Centralized Exception Handling** - Global exception handler
+5. **Standardized Response Format** - Consistent API responses
+6. **Input Validation** - Controller-level validation
+7. **Constants Management** - No hardcoded strings
+8. **YAML Configuration** - Environment-specific configs
 
 ## 🧪 Testing
 
@@ -109,6 +155,12 @@ mvn test
 
 # Run with coverage
 mvn test jacoco:report
+
+# Run specific test class
+mvn test -Dtest=Base64ControllerTest
+
+# Run integration tests
+mvn test -Dtest=*IntegrationTest
 ```
 
 ## 🚀 Deployment
@@ -123,6 +175,23 @@ docker-compose up --build -d
 
 # Stop service
 docker-compose down
+```
+
+### Environment-Specific Deployment
+
+#### Development
+```bash
+mvn spring-boot:run -Dspring.profiles.active=dev
+```
+
+#### Production
+```bash
+mvn spring-boot:run -Dspring.profiles.active=prod
+```
+
+#### Staging
+```bash
+mvn spring-boot:run -Dspring.profiles.active=stage
 ```
 
 ### Modern Cloud Deployment
@@ -181,14 +250,60 @@ docker build -t devtoolkit-backend .
 
 # Run container
 docker run -p 8080:8080 devtoolkit-backend
+
+# Run with environment variables
+docker run -p 8080:8080 \
+  -e JWT_SECRET=your-secret-key \
+  -e CORS_ALLOWED_ORIGINS=https://your-frontend.com \
+  devtoolkit-backend
 ```
 
 ## 🔒 Security
 
-- CORS configuration for frontend integration
-- Input validation for all endpoints
-- JWT security for token handling
-- Jasypt encryption utilities
+- **CORS Configuration** - Configured for frontend integration
+- **Input Validation** - Comprehensive validation for all endpoints
+- **JWT Security** - Secure token handling with configurable secrets
+- **Jasypt Encryption** - Strong encryption utilities
+- **Error Handling** - Secure error messages without sensitive data exposure
+- **File Upload Security** - Configurable file size limits and type validation
+
+## 📊 Monitoring & Health
+
+### Actuator Endpoints
+
+- **Health Check**: `GET /actuator/health`
+- **Application Info**: `GET /actuator/info`
+- **Metrics**: `GET /actuator/metrics`
+- **Environment**: `GET /actuator/env`
+
+### Logging
+
+- **Development**: DEBUG level with file logging
+- **Production**: ERROR level with console logging
+- **Staging**: WARN level with file logging
+- **SIT**: INFO level with file logging
+
+## 🔧 Development
+
+### Code Quality
+
+- **No Hardcoded Strings** - All strings moved to constants
+- **Comprehensive Exception Handling** - Global exception handler
+- **Input Validation** - Controller-level validation
+- **Standardized Response Format** - Consistent API responses
+- **YAML Configuration** - Environment-specific configs
+
+### Adding New Features
+
+1. Create feature package structure
+2. Define DTOs for request/response
+3. Create constants file
+4. Implement validation
+5. Create service interface and implementation
+6. Define API interface
+7. Implement controller
+8. Add tests
+9. Update documentation
 
 ## 📄 License
 
@@ -200,4 +315,13 @@ This project is licensed under the MIT License.
 2. Create a feature branch
 3. Follow the feature-wise structure for new features
 4. Add tests if applicable
-5. Submit a pull request 
+5. Update API documentation
+6. Submit a pull request
+
+## 📞 Support
+
+For questions or issues:
+- Check the [API Documentation](API_DOCUMENTATION.md)
+- Review the [Exception Handling Guide](EXCEPTION_HANDLING.md)
+- Check the [Validation Architecture](VALIDATION_ARCHITECTURE.md)
+- Open an issue on GitHub 
