@@ -1,0 +1,56 @@
+# ========================================
+# SIT (System Integration Test) Environment Configuration
+# ========================================
+
+# Server Configuration
+server:
+  port: 8080
+  error:
+    include-stacktrace: never
+    include-message: always
+
+# Security Configuration
+jwt:
+  secret: ${JWT_SECRET:sit-secret-key-for-integration-testing}
+  expiration: 86400000
+
+# Logging Configuration
+logging:
+  level:
+    com.devtoolkit: INFO
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+  file:
+    name: logs/devtoolkit-backend-sit.log
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# CORS Configuration
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://sit-devtoolkit-ui.example.com,http://localhost:3000}
+
+# File Upload Configuration
+spring:
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 25MB
+  devtools:
+    restart:
+      enabled: false
+    livereload:
+      enabled: false
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true 
